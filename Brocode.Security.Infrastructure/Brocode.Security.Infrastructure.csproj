@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Brocode.Security.Core\Brocode.Security.Core.csproj" />
+  </ItemGroup>
+
+</Project>

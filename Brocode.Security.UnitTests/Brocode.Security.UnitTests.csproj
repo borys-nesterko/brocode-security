@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  
+  <ItemGroup>
+    <PackageReference Include="NSubstitute" Version="5.3.0" />
+    <PackageReference Include="Castle.Core" Version="5.2.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Brocode.Application\Brocode.Security.Application.csproj" />
+  </ItemGroup>
+
+</Project>
