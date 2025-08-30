@@ -32,11 +32,10 @@ public class GitHubApiClient(HttpClient httpClient) : IGitHubApiClient
         {
             return new GitHubResponse
             {
-                IsSuccess = false,
                 ErrorMessage = $"GitHub API request failed with status code: {response.StatusCode}"
             };
         }
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
         return JsonSerializer.Deserialize<GitHubResponse>(content, jsonOptions)!;
     }
