@@ -1,36 +1,30 @@
-using Brocode.Security.Core.Abstractions;
-using Brocode.Security.Core.Enums;
-
 namespace Brocode.Security.Core.Models;
 
 public record ScanPackagesResult : IResult
 {
-    public required Guid Id { get; init; }
+    public Guid Id { get; private set; }
 
-    public required DateTime CompletedAt { get; init; }
+    public DateTime CompletedAt { get;  private set; }
 
-    public PackageSummary[] VulnerablePackages { get; init; } = [];
+    public PackageSummary[] VulnerablePackages { get; private set; } = [];
+
+    public bool IsSuccess => string.IsNullOrEmpty(ErrorMessage);
 
     public string? ErrorMessage { get; private set; }
 
-    internal static ScanPackagesResult FromError(Guid id, string errorMessage)
-        => new()
+    public static ScanPackagesResult Create(Guid id, PackageSummary[] vulnerablePackages) =>
+        new()
+        {
+            Id = id,
+            CompletedAt = DateTime.UtcNow,
+            VulnerablePackages = vulnerablePackages
+        };
+
+    public static ScanPackagesResult FromError(Guid id, string errorMessage) =>
+        new()
         {
             Id = id,
             CompletedAt = DateTime.UtcNow,
             ErrorMessage = errorMessage
         };
-}
-
-public record PackageSummary
-{
-    public required string Name { get; init; }
-
-    public required string Version { get; init; }
-
-    public required string Summary { get; init; }
-
-    public Severity Severity { get; init; }
-
-    public string? FixedInVersion { get; init; }
 }

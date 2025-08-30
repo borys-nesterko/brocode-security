@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Brocode.Security.Application.Models;
+namespace Brocode.Security.Core.Models.Npm;
 
 public record NpmProjectModel
 {
@@ -11,5 +11,5 @@ public record NpmProjectModel
     public required string Version { get; init; }
 
     [JsonPropertyName("dependencies")]
-    public Dictionary<string, Version> Depependencies { get; init; } = [];
+    public Dictionary<string, Version> Dependencies { get; init; } = [];
 }

@@ -1,40 +1,40 @@
 using Microsoft.Extensions.Logging;
 using Brocode.Security.Core.Abstractions;
-using Brocode.Security.Application.Models;
-using System.Text.Json;
 using Brocode.Security.Core.Models;
 using Brocode.Security.Core.Enums;
+using Brocode.Security.Core.Models.Npm;
+using Brocode.Security.Core.Integrations.GitHub;
 
-namespace Brocode.Security.Application.Pipeline;
+namespace Brocode.Security.Application.Scanners.Npm;
 
-public sealed class NpmScanPipeline(
+public sealed class NpmVulnerabilitiesScanner(
     IGitHubApiClient apiClient,
-    ILogger<NpmScanPipeline> logger) 
-    : IScanPipeline
+    ILogger<NpmVulnerabilitiesScanner> logger) 
+    : IVulnerabilitiesScanner 
 {
-    public async Task<ScanPackagesResult> ScanPacakagesAsync(ScanPackagesQuery query)
+    public async Task<ScanPackagesResult> ScanAsync(ScanPackagesQuery query, CancellationToken cancellationToken)
     {
-        byte[] data = Convert.FromBase64String(query.Content);
-        string decodedContent = System.Text.Encoding.UTF8.GetString(data);
+        ArgumentNullException.ThrowIfNull(query);
+        var npmPackageModel = query.UnwrapContent<NpmProjectModel>();
 
-        var npmProjectModel = JsonSerializer.Deserialize<NpmProjectModel>(decodedContent);
-
-        ArgumentNullException.ThrowIfNull(npmProjectModel);
-
-        var tasks = npmProjectModel.Depependencies.Select(package =>
-             apiClient.GetVulnerabilitiesAsync(query.Ecosystem.ToString(), package.Key)).ToArray();
+        var tasks = npmPackageModel.Dependencies.Select(package =>
+            apiClient.GetVulnerabilitiesAsync(query.Ecosystem.ToString(), package.Key, cancellationToken))
+            .ToArray();
 
         await Task.WhenAll(tasks);
 
-        var vulnerablePackages = npmProjectModel.Depependencies.SelectMany((dependency, index) =>
+        if (tasks.Any(t => t.Result.IsSuccess == false))
+        {
+            var errorMessage = tasks.First(t => t.Result.IsSuccess == false).Result.ErrorMessage;
+            logger.LogError("One or more errors occurred while fetching vulnerabilities: {ErrorMessage}", errorMessage);
+
+            return ScanPackagesResult.FromError(query.Id, errorMessage!);
+        };
+
+        var vulnerablePackages = npmPackageModel.Dependencies.SelectMany((dependency, index) =>
             FindVulnerabilities(dependency.Key, dependency.Value, tasks[index].Result)).ToArray();
 
-        return new ScanPackagesResult
-        {
-            Id = query.Id,
-            CompletedAt = DateTime.UtcNow,
-            VulnerablePackages = vulnerablePackages
-        };
+        return ScanPackagesResult.Create(query.Id, vulnerablePackages);
     }
 
     private IEnumerable<PackageSummary> FindVulnerabilities(string packageName, Version packageVersion, GitHubResponse response)
@@ -48,15 +48,15 @@ public sealed class NpmScanPipeline(
 
         foreach (var vulnerability in response.Data.SecurityVulnerabilities.Nodes)
         {
-            if (vulnerability.FirstPatchedVersion is null)
+            if (vulnerability.FirstPatchedVersion?.Identifier is null)
             {
                 continue;
             }
 
+            // Skipping vulnerabilities in between of alfa, beta, rc versions for the sake of simplicity
+            // Production ready solution should cover this case as well with more sofisticated logic
             if (HasComplexVersionRange(vulnerability.VulnerableVersionRange))
             {
-                // Skipping vulnerabilities in between of alfa, beta, rc versions for the sake of simplicity
-                // Production ready solution should cover this case as well with more sofisticated logic
                 continue;
             }
             
@@ -85,7 +85,6 @@ public sealed class NpmScanPipeline(
                 part.Contains("alpha") ||
                 part.Contains("beta") ||
                 part.Contains("rc")) : false;
-        
     }
 
     private static bool IsVersionVulnerable(Version packageVersion, string patchedVersion) =>
