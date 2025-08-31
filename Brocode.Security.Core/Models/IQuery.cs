@@ -6,5 +6,5 @@ public interface IQuery
 
     DateTime InitiatedAt { get; init; }
 
-    T UnwrapContent<T>();
+    bool TryParseContent<T>(out T? model);
 }

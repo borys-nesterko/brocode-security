@@ -12,10 +12,16 @@ public sealed class NpmVulnerabilitiesScanner(
     ILogger<NpmVulnerabilitiesScanner> logger) 
     : IVulnerabilitiesScanner 
 {
+    private const string FailedToParseJsonError = "Failed to parse npm package file content.";
+    
     public async Task<ScanPackagesResult> ScanAsync(ScanPackagesQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
-        var npmPackageModel = query.UnwrapContent<NpmProjectModel>();
+        if (!query.TryParseContent<NpmProjectModel>(out var npmPackageModel) || npmPackageModel is null)
+        {
+            logger.LogError(FailedToParseJsonError);
+            return ScanPackagesResult.FromError(query.Id, FailedToParseJsonError);
+        }
 
         var tasks = npmPackageModel.Dependencies.Select(package =>
             apiClient.GetVulnerabilitiesAsync(query.Ecosystem.ToString(), package.Key, cancellationToken))
@@ -29,7 +35,8 @@ public sealed class NpmVulnerabilitiesScanner(
             logger.LogError("One or more errors occurred while fetching vulnerabilities: {ErrorMessage}", errorMessage);
 
             return ScanPackagesResult.FromError(query.Id, errorMessage!);
-        };
+        }
+        ;
 
         var vulnerablePackages = npmPackageModel.Dependencies.SelectMany((dependency, index) =>
             FindVulnerabilities(dependency.Key, dependency.Value, tasks[index].Result)).ToArray();

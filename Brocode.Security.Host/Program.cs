@@ -1,6 +1,5 @@
 using Brocode.Security.Host.Extensions;
 using Brocode.Security.Host.Options;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 
@@ -32,11 +31,12 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
-builder.Services.AddServices();
+builder.Services.AddScanServices();
 builder.Services.AddGitHubApiClient(gitHubApiSection);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+    // Swagger can be configured to select API version on UI
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Brocode Security Scanner", Version = "v1" });
 });
 

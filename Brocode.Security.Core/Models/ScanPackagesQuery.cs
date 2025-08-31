@@ -21,16 +21,25 @@ public record ScanPackagesQuery : IQuery
             _fileContent = fileContent
         };
 
-    public T UnwrapContent<T>()
+    public bool TryParseContent<T>(out T? model)
     {
-        byte[] data = Convert.FromBase64String(_fileContent);
-        string decodedContent = System.Text.Encoding.UTF8.GetString(data);
-
-        return Ecosystem switch
+        try
         {
-            Ecosystem.Npm => JsonSerializer.Deserialize<T>(decodedContent)
-                ?? throw new InvalidOperationException("Failed to deserialize the file content."),
-            _ => throw new NotSupportedException($"Ecosystem '{Ecosystem}' is not supported yet."),
-        };
+            switch (Ecosystem)
+            {
+                case Ecosystem.Npm:
+                    model = JsonSerializer.Deserialize<T>(_fileContent);
+                    return true;
+                default:
+                    model = default!;
+                    return false;
+            }
+        }
+        catch (JsonException)
+        {
+            model = default;
+            return false;
+        }
+
     }
 }

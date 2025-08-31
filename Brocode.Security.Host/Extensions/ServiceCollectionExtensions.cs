@@ -10,7 +10,7 @@ namespace Brocode.Security.Host.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddServices(this IServiceCollection services)
+    public static IServiceCollection AddScanServices(this IServiceCollection services)
     {
         services.AddSingleton<IGetVulnerabilitiesQueryHandler, GetVulnerabilitiesQueryHandler>();
         services.AddKeyedSingleton<IVulnerabilitiesScanner, NpmVulnerabilitiesScanner>(Ecosystem.Npm.ToString());
@@ -31,7 +31,7 @@ public static class ServiceCollectionExtensions
             client.DefaultRequestHeaders.Add("Authorization", options.AuthorizationToken);
             client.DefaultRequestHeaders.Add("User-Agent", "Brocode Security App");
         })
-        .AddStandardResilienceHandler();
+        .AddStandardResilienceHandler(section.GetSection("RetryOptions"));
 
         return services;
     }

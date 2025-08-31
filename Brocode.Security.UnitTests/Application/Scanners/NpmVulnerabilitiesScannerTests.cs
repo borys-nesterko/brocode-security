@@ -27,12 +27,11 @@ namespace Brocode.Security.UnitTests.Application.Scanners
             var query = ScanPackagesQuery.Create(
                 Guid.NewGuid(),
                 Ecosystem.Npm,
-                @"ewoibmFtZSI6ICJNeSBBcHBsaWNhdGlvbiIsCiJ2ZXJzaW9uIjogIjEuMC4wIiwKImRlcGVuZGVuY2llcyI6IHsKInVuZGVyc2NvcmUiOiAiMS4zLjEiCn0KfQ==");
+                "{\"name\": \"My Application\",\"version\": \"1.0.0\",\"dependencies\": {\"underscore\": \"1.3.1\"}}");
 
             _gitHubApiClientMock.GetVulnerabilitiesAsync(query.Ecosystem.ToString(), "underscore", Arg.Any<CancellationToken>())
                 .Returns(new GitHubResponse
                 {
-                    IsSuccess = true,
                     Data = new()
                     {
                         SecurityVulnerabilities = new()
@@ -59,12 +58,11 @@ namespace Brocode.Security.UnitTests.Application.Scanners
             var query = ScanPackagesQuery.Create(
                 Guid.NewGuid(),
                 Ecosystem.Npm,
-                @"ewogICJuYW1lIjogIk15IEFwcGxpY2F0aW9uIiwKICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgImRlcGVuZGVuY2llcyI6IHsKICAgICJkZWVwLW92ZXJyaWRlIjogIjEuMC4xIiwKICAgICJleHByZXNzIjogIjQuMTcuMSIKICB9Cn0=");
+                "{ \"name\": \"My Application\", \"version\": \"1.0.0\", \"dependencies\": { \"deep-override\": \"1.0.1\", \"express\": \"4.17.1\" } }");
 
             _gitHubApiClientMock.GetVulnerabilitiesAsync(Ecosystem.Npm.ToString(), "deep-override", Arg.Any<CancellationToken>())
                 .Returns(new GitHubResponse
                 {
-                    IsSuccess = true,
                     Data = new()
                     {
                         SecurityVulnerabilities = new()
@@ -87,7 +85,6 @@ namespace Brocode.Security.UnitTests.Application.Scanners
             _gitHubApiClientMock.GetVulnerabilitiesAsync(Ecosystem.Npm.ToString(), "express", Arg.Any<CancellationToken>())
                 .Returns(new GitHubResponse
                 {
-                    IsSuccess = true,
                     Data = new()
                     {
                         SecurityVulnerabilities = new()

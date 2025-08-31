@@ -24,13 +24,21 @@ public class GetVulnerabilitiesQueryHandler(
                 throw new InvalidOperationException($"'{query.Ecosystem}' scan pipeline is not supported yet.");
             }
 
-            return scanPipeline.ScanAsync(ScanPackagesQuery.Create(query.Id, query.Ecosystem, query.FileContent));
+            return scanPipeline.ScanAsync(
+                ScanPackagesQuery.Create(query.Id, query.Ecosystem, DecodeFrom64String(query.FileContent)),
+                cancellationToken);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "An error occurred while scanning for vulnerabilities. {Message}", ex.Message);
 
-            return Task.FromResult(ScanPackagesResult.FromError(query.Id, ex.Message)); 
+            return Task.FromResult(ScanPackagesResult.FromError(query.Id, ex.Message));
         }
     }
+    
+    private static string DecodeFrom64String(string encodedString)
+    {
+        byte[] data = Convert.FromBase64String(encodedString);
+        return System.Text.Encoding.UTF8.GetString(data);
+    }   
 }
